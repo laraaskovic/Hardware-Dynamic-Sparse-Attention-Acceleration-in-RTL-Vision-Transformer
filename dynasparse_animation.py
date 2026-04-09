@@ -29,7 +29,7 @@ import matplotlib.animation as animation
 import numpy as np
 
 # Colors / style
-BG = "#0f1326"       # deep navy
+BG = "#000000"       # pure black for high contrast
 TEAL = "#00d4aa"     # active
 AMBER = "#f4a261"    # highlight
 MUTED = "#3b3f5c"    # inactive
@@ -291,7 +291,7 @@ class DynasparseAnimator:
 
     def update(self, frame):
         # Each stage lasts stage_frames frames
-        stage_frames = 75  # ~2.5s at 30 fps
+        stage_frames = 110  # ~3.6s at 30 fps for slower pacing
         stage = (frame // stage_frames) + (self.start_stage - 1)
         local_t = (frame % stage_frames) / stage_frames
         stage = min(stage, self.total_stages - 1)
