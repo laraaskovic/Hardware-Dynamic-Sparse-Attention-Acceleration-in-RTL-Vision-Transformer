@@ -44,6 +44,33 @@ cycle 3: multiply |Q|1 * |K|1 (or shift-add) -> compare to threshold -> valid fl
              |__________double-buffered to hide load latency____________|
 ```
 
+### Mermaid block diagram (high level)
+```mermaid
+flowchart LR
+    subgraph Buffers
+        QBUF[Q Buffer]
+        KBUF[K Buffer]
+    end
+    PS[Pre-screener<br/>|Q|1*|K|1 cmp]
+    MASK[Mask FIFO<br/>(align latency)]
+    ARRAY[Systolic PE Array<br/>valid gating]
+    SOFTMAX[Masked Softmax<br/>log-sum-exp + LUT exp]
+    AXI[AXI-Lite<br/>Control/Config]
+
+    QBUF --> PS
+    KBUF --> PS
+    PS --> MASK
+    MASK --> ARRAY
+    QBUF --> ARRAY
+    KBUF --> ARRAY
+    ARRAY --> SOFTMAX --> OUT[SRAM / Host]
+    AXI --> PS
+    AXI --> QBUF
+    AXI --> KBUF
+    AXI --> SOFTMAX
+    AXI --> OUT
+```
+
 ### Fixed-point considerations
 - Q, K stored as signed fixed-point (e.g., total 16 bits, frac 8). The pre-screener uses absolute values and additions only.
 - Threshold register uses same scaling. Document chosen format in `docs/fixed_point.md` before RTL coding.
