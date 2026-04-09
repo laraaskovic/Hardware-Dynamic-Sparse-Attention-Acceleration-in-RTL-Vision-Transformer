@@ -27,3 +27,4 @@ We will proceed phase-by-phase. Each phase has a checklist in `docs/phase_plan.m
 - Log attention: `python python/log_attention.py --ckpt checkpoints/vit_tiny.pt --max-batches 20`
 - Sparsity sweep plot: `python python/compute_sparsity.py --npz checkpoints/vit_tiny.attn.npz`
 - Prescreener IoU check: `python python/prescreener_sim.py --npz checkpoints/vit_tiny.attn.npz --alpha 0.1`
+- Visualize attention + masks: `python python/vis_attention.py --npz checkpoints/vit_tiny.attn.npz --sample 0 --layer 0 --head 0 --alpha 0.1` → saves to `docs/img/attn_s0_l0_h0.png`
