@@ -211,7 +211,7 @@ class DynasparseAnimator:
         prod = sum_q * sum_k
         self.ax.add_patch(patches.Rectangle((4.8, 3), 1.6, 0.6, facecolor=AMBER, alpha=ease(t)))
         self.ax.text(5.6, 3.3, f"{prod:.0f}", color=BG, ha="center")
-        self.ax.text(1, 1.8, r"$|Q\cdot K| \le |Q|_1 \times |K|_1$", color=WHITE, fontsize=12)
+        self.ax.text(1, 1.8, "|Q·K| ≤ |Q|₁ × |K|₁", color=WHITE, fontsize=12)
         self.ax.text(1, 1.2, "Threshold compare → bitmask", color=WHITE, fontsize=10)
         # threshold compare
         thresh = 150
