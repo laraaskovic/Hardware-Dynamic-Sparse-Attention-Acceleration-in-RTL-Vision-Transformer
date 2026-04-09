@@ -88,11 +88,12 @@ def main():
             break
 
     def summarize(tensors):
-        concat = torch.cat(tensors)
+        # Concatenate on CPU and use numpy quantile to avoid Torch quantile size limits
+        concat = torch.cat(tensors).cpu().numpy()
         return {
             "max": float(concat.max()),
-            "p99.9": float(torch.quantile(concat, torch.tensor(0.999))),
-            "p99": float(torch.quantile(concat, torch.tensor(0.99))),
+            "p99.9": float(np.quantile(concat, 0.999)),
+            "p99": float(np.quantile(concat, 0.99)),
         }
 
     stats = {
