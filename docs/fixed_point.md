@@ -9,9 +9,10 @@ Target: fit comfortably in mid-range FPGA DSP slices while keeping softmax stabl
 
 ### Pre-screener intermediate
 - |Q|₁ and |K|₁ sums grow with vector length `N`.
-- Worst-case magnitude ≈ `N * max(|Q|)`. For N=64 and max|Q|≈3.5 → ~224.
-- Use 24-bit accumulator (Q5.18) to avoid overflow; pipeline adders accordingly.
-- The product |Q|₁×|K|₁ can exceed 32 bits; keep 40-bit internal product, then compare to threshold.
+- Measured on CIFAR-10 ViT (10 batches, batch=64): max |q|≈4.55, |k|≈4.68; max L1 per token/head: |Q|₁≈44.3, |K|₁≈49.6 (p99.9 ≈ 39–41).
+- Worst-case bound for N=64 using measured max |K|: 64 * 4.7 ≈ 301; add 20% guard → ~361.
+- Recommendation: accumulator width ≥ 26 bits with ~16 fractional bits (e.g., Q9.16 → ±512 range) to retain margin. Product width ≈ 52 bits (2*SUM_W) to hold |Q|₁×|K|₁.
+- Existing RTL parameters can be set as: `SUM_W = WIDTH + $clog2(VEC_LEN) + 4` (with WIDTH=16, VEC_LEN=64 → SUM_W=26), `PROD_W = 2*SUM_W`.
 
 ### Threshold register
 - Store as Q5.18 to match |Q|₁ scale; host writes scaled integer value: `threshold_fixed = real_threshold * 2^18`.
