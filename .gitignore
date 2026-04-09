@@ -1,0 +1,14 @@
+# Python virtual env and caches
+.venv/
+__pycache__/
+*.pyc
+
+# Training artifacts
+checkpoints/
+data/
+*.npz
+*.pt
+
+# IDE / OS
+.DS_Store
+Thumbs.db

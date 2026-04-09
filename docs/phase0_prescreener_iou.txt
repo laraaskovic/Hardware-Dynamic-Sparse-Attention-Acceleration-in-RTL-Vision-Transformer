@@ -1,0 +1,4 @@
+alpha=0.1
+true sparsity=0.4093
+pred sparsity=0.0268
+mask IoU=0.6062
