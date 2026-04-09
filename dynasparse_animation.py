@@ -28,12 +28,18 @@ import matplotlib.patches as patches
 import matplotlib.animation as animation
 import numpy as np
 
-# Colors
-BG = "#1a1a2e"
-TEAL = "#00d4aa"
-AMBER = "#f4a261"
-MUTED = "#444466"
-WHITE = "#ffffff"
+# Colors / style
+BG = "#0f1326"       # deep navy
+TEAL = "#00d4aa"     # active
+AMBER = "#f4a261"    # highlight
+MUTED = "#3b3f5c"    # inactive
+WHITE = "#f8f8ff"
+# Global font
+mpl.rcParams["font.family"] = "DejaVu Sans"
+mpl.rcParams["text.color"] = WHITE
+mpl.rcParams["axes.labelcolor"] = WHITE
+mpl.rcParams["xtick.color"] = WHITE
+mpl.rcParams["ytick.color"] = WHITE
 
 
 def ease(t):
@@ -88,8 +94,9 @@ class DynasparseAnimator:
         self.ax.set_xlim(0, 10)
         self.ax.set_ylim(0, 10)
         self.ax.axis("off")
+        self.ax.set_facecolor(BG)
 
-    def draw_title(self, stage_idx, alpha=1.0):
+    def draw_title(self, stage_idx, alpha=1.0, subtitle=None):
         self.ax.text(
             0.5,
             9.5,
@@ -101,21 +108,31 @@ class DynasparseAnimator:
             alpha=alpha,
             weight="bold",
         )
+        if subtitle:
+            self.ax.text(
+                0.5,
+                8.9,
+                subtitle,
+                color=WHITE,
+                ha="left",
+                va="center",
+                fontsize=10,
+                alpha=alpha,
+            )
 
     # Stage 1
     def frame_stage1(self, t):
         self.init_stage()
-        self.draw_title(0, alpha=ease(t))
+        self.draw_title(0, alpha=ease(t), subtitle="Brute-force dense attention on FPGA: every block, every time.")
         size = self.grid_size
         for i in range(size):
             for j in range(size):
                 val = ease(t)
                 color = AMBER
-                self.ax.add_patch(
-                    patches.Rectangle(
-                        (1 + j * 0.6, 1 + i * 0.6), 0.5, 0.5, facecolor=color, edgecolor=BG, alpha=val
-                    )
+                rect = patches.Rectangle(
+                    (1 + j * 0.6, 1 + i * 0.6), 0.5, 0.5, facecolor=color, edgecolor=BG, alpha=val
                 )
+                self.ax.add_patch(rect)
         if t > 0.7:
             self.ax.text(
                 1,
@@ -125,13 +142,15 @@ class DynasparseAnimator:
                 fontsize=10,
             )
         if t > 0.85:
-            self.ax.add_patch(patches.Rectangle((1, 1), 0.5 * size, 0.5 * size, fill=False, edgecolor="red", linewidth=2))
-            self.ax.text(1, 5.8, "Waste", color="red", fontsize=12)
+            self.ax.add_patch(
+                patches.Rectangle((1, 1), 0.5 * size, 0.5 * size, fill=False, edgecolor="red", linewidth=2, alpha=0.6)
+            )
+            self.ax.text(1, 5.8, "Wasteful compute/energy", color="red", fontsize=12)
 
     # Stage 2
     def frame_stage2(self, t):
         self.init_stage()
-        self.draw_title(1, alpha=ease(t))
+        self.draw_title(1, alpha=ease(t), subtitle="One Q×K block → 8 multiplies + adder tree in hardware.")
         q = np.array([2, -1, 3, -2, 1, -3, 2, 0])
         k = np.array([1, 2, -1, 2, -2, 1, 0, 3])
         for idx, val in enumerate(q):
@@ -163,7 +182,7 @@ class DynasparseAnimator:
     # Stage 3
     def frame_stage3(self, t):
         self.init_stage()
-        self.draw_title(2, alpha=ease(t))
+        self.draw_title(2, alpha=ease(t), subtitle="Predict saliency with L1 norms; 2-cycle predictor, no DSPs.")
         q = np.array([2, -1, 3, -2, 1, -3, 2, 0])
         k = np.array([1, 2, -1, 2, -2, 1, 0, 3])
         abs_q = np.abs(q)
@@ -193,7 +212,7 @@ class DynasparseAnimator:
         self.ax.add_patch(patches.Rectangle((4.8, 3), 1.6, 0.6, facecolor=AMBER, alpha=ease(t)))
         self.ax.text(5.6, 3.3, f"{prod:.0f}", color=BG, ha="center")
         self.ax.text(1, 1.8, r"$|Q\cdot K| \le |Q|_1 \times |K|_1$", color=WHITE, fontsize=12)
-        self.ax.text(1, 1.2, "2 cycles, no multipliers in predictor", color=WHITE, fontsize=10)
+        self.ax.text(1, 1.2, "Threshold compare → bitmask", color=WHITE, fontsize=10)
         # threshold compare
         thresh = 150
         bar_len = min(prod / (2 * thresh), 1.5)
@@ -207,21 +226,22 @@ class DynasparseAnimator:
     # Stage 4
     def frame_stage4(self, t):
         self.init_stage()
-        self.draw_title(3, alpha=ease(t))
+        self.draw_title(3, alpha=ease(t), subtitle="Pre-screener runs ahead of compute: generate bitmask per input.")
         size = self.grid_size
         saved_ratio = ease(t) * 0.7
         teal_count = int(size * size * (1 - saved_ratio))
-        idxs = np.arange(size * size)
-        rng = np.random.default_rng(42)
-        rng.shuffle(idxs)
+        # deterministic pattern: diagonal band stays compute
+        mask = np.full((size, size), MUTED)
+        for i in range(size):
+            for j in range(size):
+                if abs(i - j) < 2:
+                    mask[i, j] = TEAL
+        flat = mask.flatten()
         for n in range(size * size):
             i = n // size
             j = n % size
-            if n < teal_count:
-                color = TEAL
-            else:
-                color = MUTED
-            alpha = ease(t) * (1 if n < int(ease(t) * size * size) else 0.2)
+            color = flat[n] if n < teal_count else MUTED
+            alpha = ease(t)
             self.ax.add_patch(
                 patches.Rectangle((1 + j * 0.6, 1 + i * 0.6), 0.5, 0.5, facecolor=color, edgecolor=BG, alpha=alpha)
             )
@@ -230,7 +250,7 @@ class DynasparseAnimator:
     # Stage 5
     def frame_stage5(self, t):
         self.init_stage()
-        self.draw_title(4, alpha=ease(t))
+        self.draw_title(4, alpha=ease(t), subtitle="valid_mask gates PEs; inactive tiles freeze accumulators.")
         dim = self.dim
         # draw PEs
         for i in range(dim):
