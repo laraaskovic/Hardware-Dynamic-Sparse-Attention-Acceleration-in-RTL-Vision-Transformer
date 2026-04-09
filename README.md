@@ -34,6 +34,8 @@ We will proceed phase-by-phase. Each phase has a checklist in `docs/phase_plan.m
 - Sparsity sweep plot: `python python/compute_sparsity.py --npz checkpoints/vit_tiny.attn.npz`
 - Prescreener IoU check: `python python/prescreener_sim.py --npz checkpoints/vit_tiny.attn.npz --alpha 0.1`
 - Visualize attention + masks: `python python/vis_attention.py --npz checkpoints/vit_tiny.attn.npz --sample 0 --layer 0 --head 0 --alpha 0.1` → saves to `docs/img/attn_s0_l0_h0.png`
+- Dynamic mask GIF: `python python/make_mask_gif.py --npz checkpoints/vit_tiny.attn.npz --layer 0 --alpha 0.1 --samples 8` → `docs/img/attn_mask_animation.gif`
+- Pareto teaser plot (IoU vs predicted sparsity): `python python/pareto_prescreener.py --npz checkpoints/vit_tiny.attn.npz --alpha-list 0.05,0.1,0.15,0.2,0.25,0.3` → `docs/img/pareto_prescreener.png`
 
 ### Current status (Phase 0 → 1)
 - CIFAR-10 ViT baseline trained on CPU: best val_acc ≈ 0.709.
