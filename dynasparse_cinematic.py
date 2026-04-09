@@ -40,8 +40,8 @@ STAGES = [
 ]
 
 # Timing
-TRANS_FRAMES = 90   # 3s at 30fps
-HOLD_FRAMES = 120   # 4s hold
+TRANS_FRAMES = 60   # 2s at 30fps (faster transitions)
+HOLD_FRAMES = 80    # ~2.7s hold (tighter pacing)
 
 
 def ease(t):
@@ -129,7 +129,7 @@ class Cinematic:
         t = ease(local_f / (TRANS_FRAMES + HOLD_FRAMES))
         grid = 8
         cell_size = 0.5
-        start_x, start_y = 2, 3
+        start_x, start_y = 2.2, 3.1
         # title
         glow_text(self.ax, 5, 8.7, "the attention problem", TEXT, 24, alpha=t)
         glow_text(self.ax, 5, 8.0, "every token looks at every other token", SUBTEXT, 14, alpha=t)
@@ -145,7 +145,7 @@ class Cinematic:
                 count += 1
         # counter
         macs = min(int(t * grid * grid * 512), grid * grid * 512)
-        self.ax.text(8.2, 8.7, f"compute cost: {macs} MACs", color=ACCENT, fontsize=10, ha="left", va="center")
+        self.ax.text(7.6, 8.7, f"compute cost: {macs} MACs", color=ACCENT, fontsize=10, ha="left", va="center")
         if t > 0.8:
             glow_text(self.ax, 5, 2.0, r"$O(n^2)$ complexity — 512 tokens = 262{,}144 dot products", WARN, 12)
             glow_text(self.ax, 5, 1.4, "most of this is wasted.", SUBTEXT, 11, ha="center", va="center")
@@ -154,7 +154,7 @@ class Cinematic:
         t = ease(local_f / (TRANS_FRAMES + HOLD_FRAMES))
         grid = 8
         cell_size = 0.5
-        start_x, start_y = 2, 3
+        start_x, start_y = 2.2, 3.1
         glow_text(self.ax, 5, 8.7, "existing solutions: static masks", TEXT, 22, alpha=t)
         glow_text(self.ax, 5, 8.0, "fixed patterns decided at training time", SUBTEXT, 13, alpha=t)
         # diagonal mask pattern
@@ -162,8 +162,8 @@ class Cinematic:
             for j in range(grid):
                 color = NEUTRAL if abs(i - j) < 2 else WARN
                 fancy_box(self.ax, start_x + j * cell_size, start_y + i * cell_size, cell_size, cell_size, color, alpha=0.9)
-        glow_text(self.ax, 5, 2.0, "NVIDIA 2:4 sparsity — fixed 50% skip", ACCENT, 11)
-        glow_text(self.ax, 5, 1.5, "mask never changes per input", WARN, 11)
+        glow_text(self.ax, 5, 2.2, "NVIDIA 2:4 sparsity — fixed 50% skip", ACCENT, 11)
+        glow_text(self.ax, 5, 1.7, "mask never changes per input", WARN, 11)
 
     def stage3(self, local_f):
         t = ease(local_f / (TRANS_FRAMES + HOLD_FRAMES))
@@ -196,8 +196,8 @@ class Cinematic:
                     color = ACCENT if mask[i, j] else NEUTRAL
                     fancy_box(self.ax, sx + j * cell, oy + i * cell, cell, cell, color, alpha=0.9)
         # equation
-        glow_text(self.ax, 7.2, 2.0, r"$|Q \cdot K| \leq \|Q\|_1 \cdot \|K\|_1$", ACCENT, 14)
-        glow_text(self.ax, 7.2, 1.4, "if upper bound < threshold → SKIP (no false negatives)", ACCENT, 10)
+        glow_text(self.ax, 7.2, 2.2, r"$|Q \cdot K| \leq \|Q\|_1 \cdot \|K\|_1$", ACCENT, 14)
+        glow_text(self.ax, 7.2, 1.6, "if upper bound < threshold → SKIP (no false negatives)", ACCENT, 10)
 
     def stage4(self, local_f):
         t = ease(local_f / (TRANS_FRAMES + HOLD_FRAMES))
@@ -222,9 +222,9 @@ class Cinematic:
             fancy_box(self.ax, 5.5 + idx * 0.55, 6.0, 0.5, 0.45, face=ACCENT, alpha=0.7, text=f"{val:.1f}", text_color=BG)
             fancy_box(self.ax, 5.5 + idx * 0.55, 5.2, 0.5, 0.45, face=ACCENT, alpha=0.7, text=f"{abs_k[idx]:.1f}", text_color=BG)
         if t > 0.2:
-            glow_text(self.ax, 6.0, 4.6, "|Q|₁ and |K|₁ via adders", ACCENT, 10, ha="left")
-            glow_text(self.ax, 6.0, 4.1, "compare to threshold", ACCENT, 10, ha="left")
-            glow_text(self.ax, 6.0, 3.6, "cycle 1: abs + sum    cycle 2: multiply + compare", SUBTEXT, 9, ha="left")
+        glow_text(self.ax, 6.0, 4.8, "|Q|₁ and |K|₁ via adders", ACCENT, 10, ha="left")
+        glow_text(self.ax, 6.0, 4.3, "compare to threshold", ACCENT, 10, ha="left")
+        glow_text(self.ax, 6.0, 3.8, "cycle 1: abs + sum    cycle 2: multiply + compare", SUBTEXT, 9, ha="left")
             if t > 0.5:
                 glow_text(self.ax, 6.0, 2.7, "SKIP", WARN, 14)
                 glow_text(self.ax, 7.0, 2.7, "COMPUTE", ACCENT, 14)
