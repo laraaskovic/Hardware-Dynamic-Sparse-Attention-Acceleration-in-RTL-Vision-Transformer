@@ -222,9 +222,9 @@ class Cinematic:
             fancy_box(self.ax, 5.5 + idx * 0.55, 6.0, 0.5, 0.45, face=ACCENT, alpha=0.7, text=f"{val:.1f}", text_color=BG)
             fancy_box(self.ax, 5.5 + idx * 0.55, 5.2, 0.5, 0.45, face=ACCENT, alpha=0.7, text=f"{abs_k[idx]:.1f}", text_color=BG)
         if t > 0.2:
-        glow_text(self.ax, 6.0, 4.8, "|Q|₁ and |K|₁ via adders", ACCENT, 10, ha="left")
-        glow_text(self.ax, 6.0, 4.3, "compare to threshold", ACCENT, 10, ha="left")
-        glow_text(self.ax, 6.0, 3.8, "cycle 1: abs + sum    cycle 2: multiply + compare", SUBTEXT, 9, ha="left")
+            glow_text(self.ax, 6.0, 4.8, "|Q|₁ and |K|₁ via adders", ACCENT, 10, ha="left")
+            glow_text(self.ax, 6.0, 4.3, "compare to threshold", ACCENT, 10, ha="left")
+            glow_text(self.ax, 6.0, 3.8, "cycle 1: abs + sum    cycle 2: multiply + compare", SUBTEXT, 9, ha="left")
             if t > 0.5:
                 glow_text(self.ax, 6.0, 2.7, "SKIP", WARN, 14)
                 glow_text(self.ax, 7.0, 2.7, "COMPUTE", ACCENT, 14)
