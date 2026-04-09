@@ -46,7 +46,10 @@ class ViTEncoderLayer(nn.Module):
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         # MultiheadAttention with need_weights=True returns (B, heads, seq, seq)
         attn_input = self.norm1(x)
-        attn_out, attn_weights = self.attn(attn_input, attn_input, attn_input, need_weights=True)
+        # average_attn_weights=False keeps per-head matrices for analysis
+        attn_out, attn_weights = self.attn(
+            attn_input, attn_input, attn_input, need_weights=True, average_attn_weights=False
+        )
         x = x + attn_out
         x = x + self.mlp(self.norm2(x))
         return x, attn_weights

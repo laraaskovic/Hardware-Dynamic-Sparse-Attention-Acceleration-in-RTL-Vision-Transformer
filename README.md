@@ -24,7 +24,7 @@ We will proceed phase-by-phase. Each phase has a checklist in `docs/phase_plan.m
 ### Phase 0 quickstart
 - Install deps: `python -m venv .venv && .\.venv\Scripts\activate && pip install -r python/requirements.txt`
 - Train baseline: `python python/baseline_vit.py --epochs 20 --batch-size 128 --save checkpoints/vit_tiny.pt`
-- Log attention: `python python/log_attention.py --ckpt checkpoints/vit_tiny.pt --max-batches 20`
+- Log attention: `python python/log_attention.py --ckpt checkpoints/vit_tiny.pt --max-batches 20` (per-head saved after this change)
 - Sparsity sweep plot: `python python/compute_sparsity.py --npz checkpoints/vit_tiny.attn.npz`
 - Prescreener IoU check: `python python/prescreener_sim.py --npz checkpoints/vit_tiny.attn.npz --alpha 0.1`
 - Visualize attention + masks: `python python/vis_attention.py --npz checkpoints/vit_tiny.attn.npz --sample 0 --layer 0 --head 0 --alpha 0.1` → saves to `docs/img/attn_s0_l0_h0.png`

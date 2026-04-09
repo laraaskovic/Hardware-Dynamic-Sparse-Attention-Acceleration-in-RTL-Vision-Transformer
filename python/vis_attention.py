@@ -21,7 +21,16 @@ import numpy as np
 
 
 def upper_bound_mask(attn_slice: np.ndarray, alpha: float):
-    # attn_slice: (S, S)
+    """
+    attn_slice: (S, S) attention matrix.
+    Handles 1D flatten by attempting square reshape.
+    """
+    if attn_slice.ndim == 1:
+        side = int(np.sqrt(attn_slice.size))
+        attn_slice = attn_slice.reshape(side, side)
+    if attn_slice.ndim != 2 or attn_slice.shape[0] != attn_slice.shape[1]:
+        raise ValueError(f"Expected square matrix, got shape {attn_slice.shape}")
+
     max_val = attn_slice.max()
     true_mask = attn_slice > (alpha * max_val)
 
@@ -53,9 +62,15 @@ def parse_args():
 def main():
     args = parse_args()
     data = np.load(args.npz)
-    attn = data["attn"]  # shape (N, L, H, S, S)
+    attn = data["attn"]  # shape can be (N,L,H,S,S) or (N,L,S,S)
     s, l, h = args.sample, args.layer, args.head
-    attn_slice = attn[s, l, h]
+
+    if attn.ndim == 5:
+        attn_slice = attn[s, l, h]
+    elif attn.ndim == 4:
+        attn_slice = attn[s, l]  # no head dimension in saved file
+    else:
+        raise ValueError(f"Unexpected attention ndim {attn.ndim}")
 
     true_mask, ub_mask = upper_bound_mask(attn_slice, args.alpha)
     m_iou = iou(true_mask, ub_mask)
