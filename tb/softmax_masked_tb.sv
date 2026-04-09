@@ -63,7 +63,7 @@ module softmax_masked_tb;
         // Check outputs roughly (tolerance)
         for (int i=0;i<VEC_LEN;i++) begin
             real expect = softmax_ref(vals, msk, i);
-            real got = $itor($signed(out_vec[i*LUT_W +: LUT_W]))/(1<<LUT_W);
+            real got = $itor($unsigned(out_vec[i*LUT_W +: LUT_W]))/(1<<LUT_W);
             if (msk[i]==0 && got > 1e-3) $fatal("Masked entry not zero");
             if (msk[i]==1 && ($abs(got-expect) > 0.05))
                 $fatal("Softmax mismatch idx %0d: got %f exp %f", i, got, expect);

@@ -44,17 +44,19 @@ module softmax_masked #(
         end
     end
 
-    // Stage 3: subtract max and index LUT
+    // Stage 3: subtract max and index LUT (shift right by FRAC bits to map to LUT step)
+    localparam int FRAC = 13;
     logic signed [DATA_W-1:0] x_shifted [VEC_LEN];
     logic [LUT_ADDR-1:0]      lut_addr [VEC_LEN];
     logic [LUT_W-1:0]         exp_val  [VEC_LEN];
     generate
         for (i = 0; i < VEC_LEN; i++) begin : SHIFT
             assign x_shifted[i] = x_masked[i] - xmax;
-            // simple address mapping: clip to LUT range
+            // map fixed-point to LUT index: use upper bits after FRAC shift
             wire signed [DATA_W-1:0] xs = x_shifted[i];
-            wire signed [LUT_ADDR:0] clip = (xs >  (1<<(LUT_ADDR-1))-1) ? (1<<(LUT_ADDR-1))-1 :
-                                            (xs < -(1<<(LUT_ADDR-1)))   ? -(1<<(LUT_ADDR-1))   : xs[LUT_ADDR-1:0];
+            wire signed [DATA_W-1:0] xs_shift = xs >>> FRAC; // approximate step 1
+            wire signed [LUT_ADDR:0] clip = (xs_shift >  (1<<(LUT_ADDR-1))-1) ? (1<<(LUT_ADDR-1))-1 :
+                                            (xs_shift < -(1<<(LUT_ADDR-1)))   ? -(1<<(LUT_ADDR-1))   : xs_shift[LUT_ADDR-1:0];
             assign lut_addr[i] = clip[LUT_ADDR-1:0];
         end
     endgenerate
@@ -76,19 +78,13 @@ module softmax_masked #(
         for (int k = 0; k < VEC_LEN; k++) exp_sum += exp_val[k];
     end
 
-    // Stage 5: normalize (simple fractional divide)
-    // Note: for ASIC/FPGA replace with reciprocal LUT + multiplier for performance.
-    function automatic [LUT_W-1:0] div_frac(input [LUT_W+8:0] num, input [LUT_W+8:0] den);
-        real r = num;
-        real d = den;
-        div_frac = $rtoi((r/d) * (1<<LUT_W));
-    endfunction
+    // Stage 5: normalize (integer division to Q0.LUT_W)
 
     generate
         for (i = 0; i < VEC_LEN; i++) begin : NORM
             always_ff @(posedge clk or negedge rst_n) begin
                 if (!rst_n) out_vec[i*LUT_W +: LUT_W] <= '0;
-                else out_vec[i*LUT_W +: LUT_W] <= (exp_sum == 0) ? '0 : div_frac(exp_val[i], exp_sum);
+                else out_vec[i*LUT_W +: LUT_W] <= (exp_sum == 0) ? '0 : ((exp_val[i] << LUT_W) / exp_sum);
             end
         end
     endgenerate

@@ -12,12 +12,30 @@ module top_dynasparse #(
 ) (
     input  logic clk,
     input  logic rst_n,
-    // AXI-lite signals would go here (placeholder)
-    input  logic start,
+    // AXI-lite
+    input  logic         s_axi_aclk,
+    input  logic         s_axi_aresetn,
+    input  logic [3:0]   s_axi_awaddr,
+    input  logic         s_axi_awvalid,
+    output logic         s_axi_awready,
+    input  logic [31:0]  s_axi_wdata,
+    input  logic [3:0]   s_axi_wstrb,
+    input  logic         s_axi_wvalid,
+    output logic         s_axi_wready,
+    output logic [1:0]   s_axi_bresp,
+    output logic         s_axi_bvalid,
+    input  logic         s_axi_bready,
+    input  logic [3:0]   s_axi_araddr,
+    input  logic         s_axi_arvalid,
+    output logic         s_axi_arready,
+    output logic [31:0]  s_axi_rdata,
+    output logic [1:0]   s_axi_rresp,
+    output logic         s_axi_rvalid,
+    input  logic         s_axi_rready,
     output logic done
 );
 
-    typedef enum logic [2:0] {IDLE, LOAD_Q, LOAD_K, PRESCREEN, COMPUTE, WRITEBACK} state_t;
+    typedef enum logic [2:0] {IDLE, LOAD_Q, LOAD_K, PRESCREEN, COMPUTE, SOFTM, WRITEBACK} state_t;
     state_t state, next_state;
 
     always_ff @(posedge clk or negedge rst_n) begin
@@ -32,12 +50,79 @@ module top_dynasparse #(
             LOAD_Q:     next_state = LOAD_K;
             LOAD_K:     next_state = PRESCREEN;
             PRESCREEN:  next_state = COMPUTE;
-            COMPUTE:    next_state = WRITEBACK;
+            COMPUTE:    next_state = SOFTM;
+            SOFTM:      next_state = WRITEBACK;
             WRITEBACK:  next_state = IDLE;
         endcase
     end
 
     assign done = (state == WRITEBACK);
+
+    // AXI-lite instance
+    logic start_pulse;
+    logic [PROD_W-1:0] threshold;
+    axi_lite_slave #(.PROD_W(PROD_W)) u_axil (
+        .ACLK(s_axi_aclk),
+        .ARESETn(s_axi_aresetn),
+        .AWADDR(s_axi_awaddr),
+        .AWVALID(s_axi_awvalid),
+        .AWREADY(s_axi_awready),
+        .WDATA(s_axi_wdata),
+        .WSTRB(s_axi_wstrb),
+        .WVALID(s_axi_wvalid),
+        .WREADY(s_axi_wready),
+        .BRESP(s_axi_bresp),
+        .BVALID(s_axi_bvalid),
+        .BREADY(s_axi_bready),
+        .ARADDR(s_axi_araddr),
+        .ARVALID(s_axi_arvalid),
+        .ARREADY(s_axi_arready),
+        .RDATA(s_axi_rdata),
+        .RRESP(s_axi_rresp),
+        .RVALID(s_axi_rvalid),
+        .RREADY(s_axi_rready),
+        .start_pulse(start_pulse),
+        .threshold(threshold),
+        .done(done),
+        .busy(state != IDLE)
+    );
+
+    // Small memories for Q/K blocks (single block buffer)
+    logic [VEC_LEN*WIDTH-1:0] q_buf, k_buf;
+    // Host writes not implemented here; in practice map AXI-lite writes to these buffers.
+    // For now, they can be driven in testbench via force or direct assignment.
+
+    // Tile and softmax instances (wiring placeholders)
+    logic tile_valid_out, tile_mask_out;
+    logic [DIM*DIM*ACC_W-1:0] acc_mat;
+    logic [DIM*DATA_W-1:0] a_stub, b_stub;
+    assign a_stub = '0;
+    assign b_stub = '0;
+    tile_prescreen_array #(
+        .WIDTH(WIDTH),
+        .VEC_LEN(VEC_LEN),
+        .SUM_W(SUM_W),
+        .PROD_W(PROD_W),
+        .DATA_W(DATA_W),
+        .ACC_W(ACC_W),
+        .DIM(DIM)
+    ) u_tile (
+        .clk(clk),
+        .rst_n(rst_n),
+        .valid_in(start_pulse),
+        .q_vec_flat(q_buf),
+        .k_vec_flat(k_buf),
+        .threshold(threshold),
+        .a_in_vec(a_stub),
+        .b_in_vec(b_stub),
+        .acc_init('0),
+        .acc_out(acc_mat),
+        .valid_out(tile_valid_out),
+        .mask_out(tile_mask_out)
+    );
+
+    // Softmax placeholder wires (not fully wired to acc_mat)
+    // To complete: map acc_mat to softmax inputs per token.
 
     // TODO: instantiate buffers, tile_prescreen_array, softmax_masked, AXI-lite bridge.
 
