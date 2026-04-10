@@ -25,7 +25,9 @@ module tile_prescreen_array #(
     output logic                         mask_out,
     // Performance counters (blocks)
     output logic [31:0]                  blocks_compute,
-    output logic [31:0]                  blocks_skip
+    output logic [31:0]                  blocks_skip,
+    output logic [31:0]                  macs_compute,
+    output logic [31:0]                  macs_skip
 );
 
     // Prescreener
@@ -98,9 +100,13 @@ module tile_prescreen_array #(
         if (!rst_n) begin
             blocks_compute <= 32'd0;
             blocks_skip    <= 32'd0;
+            macs_compute   <= 32'd0;
+            macs_skip      <= 32'd0;
         end else if (valid_out) begin
             if (mask_out) blocks_compute <= blocks_compute + 1;
             else          blocks_skip    <= blocks_skip + 1;
+            if (mask_out) macs_compute <= macs_compute + DIM*DIM;
+            else          macs_skip    <= macs_skip + DIM*DIM;
         end
     end
 
