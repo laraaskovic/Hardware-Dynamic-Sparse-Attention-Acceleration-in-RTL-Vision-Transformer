@@ -6,15 +6,16 @@ module softmax_masked #(
     parameter int DATA_W   = 16, // input width (Q3.13 recommended)
     parameter int LUT_ADDR = 12, // covers signed range [-2048,2047] -> step depends on scaling
     parameter int LUT_W    = 16, // output exp width (Q0.16 recommended)
-    parameter int VEC_LEN  = 8
+    parameter int VEC_LEN  = 8,
+    parameter int DEN_W    = 24  // denominator accumulator width
 ) (
-    input  logic                     clk,
-    input  logic                     rst_n,
-    input  logic                     valid_in,
+    input  logic                      clk,
+    input  logic                      rst_n,
+    input  logic                      valid_in,
     input  logic [VEC_LEN*DATA_W-1:0] in_vec,     // concatenated inputs
-    input  logic [VEC_LEN-1:0]       mask,        // 1 = keep, 0 = treat as -inf
-    output logic                     valid_out,
-    output logic [VEC_LEN*LUT_W-1:0] out_vec      // softmax outputs
+    input  logic [VEC_LEN-1:0]        mask,       // 1 = keep, 0 = treat as -inf
+    output logic                      valid_out,
+    output logic [VEC_LEN*LUT_W-1:0]  out_vec     // softmax outputs
 );
 
     // Unpack
@@ -62,34 +63,44 @@ module softmax_masked #(
     endgenerate
 
     // Exponential LUT (synchronous read)
-    logic [LUT_W-1:0] exp_rom [0:(1<<LUT_ADDR)-1];
-    initial $readmemh("rtl/lut/exp_lut.mem", exp_rom);
-
-    always_ff @(posedge clk) begin
-        for (int k = 0; k < VEC_LEN; k++) begin
-            exp_val[k] <= exp_rom[lut_addr[k]];
-        end
-    end
+    exp_lut_rom #(
+        .ADDR_W(LUT_ADDR),
+        .DATA_W(LUT_W),
+        .MEMFILE("rtl/lut/exp_lut.mem")
+    ) exp_lut_i [VEC_LEN-1:0] (
+        .clk (clk),
+        .addr(lut_addr),
+        .dout(exp_val)
+    );
 
     // Stage 4: sum exp
-    logic [LUT_W+8:0] exp_sum;
+    logic [DEN_W-1:0] exp_sum;
     always_comb begin
         exp_sum = '0;
         for (int k = 0; k < VEC_LEN; k++) exp_sum += exp_val[k];
     end
 
-    // Stage 5: normalize (integer division to Q0.LUT_W)
+    // Stage 5: normalize using reciprocal_unit (integer)
+    logic [LUT_W-1:0] recip;
+    reciprocal_unit #(
+        .DEN_W(DEN_W),
+        .OUT_W(LUT_W),
+        .SCALE(LUT_W)
+    ) recip_i (
+        .denom(exp_sum),
+        .recip(recip)
+    );
 
     generate
         for (i = 0; i < VEC_LEN; i++) begin : NORM
             always_ff @(posedge clk or negedge rst_n) begin
                 if (!rst_n) out_vec[i*LUT_W +: LUT_W] <= '0;
-                else out_vec[i*LUT_W +: LUT_W] <= (exp_sum == 0) ? '0 : ((exp_val[i] << LUT_W) / exp_sum);
+                else out_vec[i*LUT_W +: LUT_W] <= (exp_sum == 0) ? '0 : ((exp_val[i] * recip) >> LUT_W);
             end
         end
     endgenerate
 
-    // valid pipeline (2 cycles here: LUT + divide)
+    // valid pipeline (2 cycles here: LUT + recip/mul)
     logic [1:0] vpipe;
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) vpipe <= '0;
