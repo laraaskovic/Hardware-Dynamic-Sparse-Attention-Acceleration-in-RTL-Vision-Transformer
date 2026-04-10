@@ -71,6 +71,72 @@ flowchart LR
     AXI --> OUT
 ```
 
+### Mermaid sequence of datapath (detailed)
+```mermaid
+sequenceDiagram
+    participant Host
+    participant AXI as AXI-Lite
+    participant QSRAM as Q SRAM
+    participant KSRAM as K SRAM
+    participant PS as Pre-Screener
+    participant Align as Mask/Data Align
+    participant PE as PE Array
+    participant SM as Softmax
+    participant OUT as Output SRAM
+
+    Host->>AXI: write threshold, start
+    Host->>QSRAM: load Q blocks
+    Host->>KSRAM: load K blocks
+    AXI-->>PS: threshold value
+    QSRAM-->>PS: Q block
+    KSRAM-->>PS: K block
+    PS-->>Align: mask (2 cycles)
+    QSRAM-->>Align: Q data (delayed)
+    KSRAM-->>Align: K data (delayed)
+    Align-->>PE: valid_mask + Q/K aligned
+    PE-->>SM: partial sums
+    Align-->>SM: mask for softmax
+    SM-->>OUT: normalized scores
+    OUT-->>Host: read results
+```
+
+### Mermaid component decomposition
+```mermaid
+graph TD
+    subgraph Prescreener
+        ABS[Abs units]
+        ADD[Adder tree (|Q|₁,|K|₁)]
+        MUL[MUL (|Q|₁×|K|₁)]
+        CMP[Comparator vs threshold]
+        ABS --> ADD --> MUL --> CMP
+    end
+
+    subgraph PE_Array[PE Array DIMxDIM]
+        PE00((PE))
+        PE01((PE))
+        PE02((PE))
+        PE03((PE))
+    end
+
+    subgraph Softmax
+        SHIFT[Max subtract]
+        LUT[Exp LUT ROM]
+        SUM[Adder tree]
+        RECIP[Reciprocal]
+        NORM[Multiply & normalize]
+        SHIFT --> LUT --> SUM --> RECIP --> NORM
+    end
+
+    Buffers(Q/K SRAM) --> Prescreener
+    Prescreener --> PE_Array
+    Buffers --> PE_Array
+    PE_Array --> Softmax --> OutSRAM(Output SRAM)
+    AXI_CFG[AXI-Lite Config] --> Prescreener
+    AXI_CFG --> Buffers
+    AXI_CFG --> Softmax
+    AXI_CFG --> OutSRAM
+```
+
 ### Fixed-point considerations
 - Q, K stored as signed fixed-point (e.g., total 16 bits, frac 8). The pre-screener uses absolute values and additions only.
 - Threshold register uses same scaling. Document chosen format in `docs/fixed_point.md` before RTL coding.
