@@ -1,0 +1,16 @@
+gantt
+    dateFormat  X
+    title Pipeline timing (cycles)
+    section Prescreener
+    abs+sum          :done, 0, 1
+    mul+compare      :done, 1, 1
+    section Align
+    data_shift       :done, 0, 2
+    section PE_Array
+    mac0             :active, 2, 4
+    mac1             : 3, 4
+    section Softmax
+    max_subtract     : 6, 1
+    exp_lut          : 7, 1
+    reciprocal       : 8, 1
+    normalize        : 9, 1

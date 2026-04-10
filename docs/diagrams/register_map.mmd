@@ -1,0 +1,15 @@
+classDiagram
+    class AXIL_REGS {
+        +0x00 control (bit0 start)
+        +0x04 status (bit0 done, bit1 busy)
+        +0x08 threshold_low[31:0]
+        +0x0C threshold_high[19:0]
+        +0x10 q_base
+        +0x14 k_base
+        +0x18 out_base
+        +0x1C dims (rows, cols)
+    }
+    class THRESHOLD {
+        +52-bit fixed point\nQ9.16 product domain
+    }
+    AXIL_REGS --> THRESHOLD

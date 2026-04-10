@@ -1,0 +1,12 @@
+flowchart TD
+    GEN[Python: generate Q/K, golden outputs]
+    BFM[SV BFM: drive AXI-lite, SRAM writes]
+    TB[Top-level TB with assertions]
+    SVA[SVA: prescreener, PE gating, FSM safe states]
+    REG[Regression script run_modelsims.do]
+    REPORT[PASS/FAIL + logs]
+
+    GEN --> BFM --> TB --> REPORT
+    TB --> SVA
+    REG --> TB
+    REG --> SVA

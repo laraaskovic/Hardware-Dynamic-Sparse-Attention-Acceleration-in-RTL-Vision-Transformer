@@ -1,0 +1,29 @@
+flowchart LR
+    subgraph SRAM
+        Q0[Q bank A]
+        Q1[Q bank B]
+        K0[K bank A]
+        K1[K bank B]
+    end
+    HOST[Host AXI writes]
+    PS[Pre-screener]
+    PE[PE Array]
+    SWITCH[Buffer select bit]
+
+    HOST --> Q0
+    HOST --> K0
+    HOST --> Q1
+    HOST --> K1
+
+    SWITCH -- even blocks --> Q0
+    SWITCH -- even blocks --> K0
+    SWITCH -- odd blocks  --> Q1
+    SWITCH -- odd blocks  --> K1
+
+    Q0 --> PS
+    K0 --> PS
+    Q1 --> PS
+    K1 --> PS
+    PS --> PE
+    SWITCH -.-> PE
+    SWITCH -.-> Host
