@@ -8,7 +8,8 @@ module top_dynasparse #(
     parameter int PROD_W  = 52,
     parameter int DATA_W  = 16,
     parameter int ACC_W   = 52,
-    parameter int DIM     = 4
+    parameter int DIM     = 4,
+    parameter int ADDR_W  = 8
 ) (
     input  logic clk,
     input  logic rst_n,
@@ -87,10 +88,29 @@ module top_dynasparse #(
         .busy(state != IDLE)
     );
 
-    // Small memories for Q/K blocks (single block buffer)
+    // Q/K SRAM buffers (dual-port behavioral)
+    logic                     q_we, k_we;
+    logic [ADDR_W-1:0]        q_waddr, k_waddr;
+    logic [VEC_LEN*WIDTH-1:0] q_wdata, k_wdata;
+    logic [ADDR_W-1:0]        q_raddr, k_raddr;
     logic [VEC_LEN*WIDTH-1:0] q_buf, k_buf;
-    // Host writes not implemented here; in practice map AXI-lite writes to these buffers.
-    // For now, they can be driven in testbench via force or direct assignment.
+
+    simple_dualport_sram #(.ADDR_W(ADDR_W), .DATA_W(VEC_LEN*WIDTH)) q_sram (
+        .clk(clk),
+        .we(q_we),
+        .waddr(q_waddr),
+        .wdata(q_wdata),
+        .raddr(q_raddr),
+        .rdata(q_buf)
+    );
+    simple_dualport_sram #(.ADDR_W(ADDR_W), .DATA_W(VEC_LEN*WIDTH)) k_sram (
+        .clk(clk),
+        .we(k_we),
+        .waddr(k_waddr),
+        .wdata(k_wdata),
+        .raddr(k_raddr),
+        .rdata(k_buf)
+    );
 
     // Tile and softmax instances (wiring placeholders)
     logic tile_valid_out, tile_mask_out;
@@ -98,6 +118,7 @@ module top_dynasparse #(
     logic [DIM*DATA_W-1:0] a_stub, b_stub;
     assign a_stub = '0;
     assign b_stub = '0;
+    logic [31:0] blocks_compute, blocks_skip, macs_compute, macs_skip;
     tile_prescreen_array #(
         .WIDTH(WIDTH),
         .VEC_LEN(VEC_LEN),
@@ -118,12 +139,37 @@ module top_dynasparse #(
         .acc_init('0),
         .acc_out(acc_mat),
         .valid_out(tile_valid_out),
-        .mask_out(tile_mask_out)
+        .mask_out(tile_mask_out),
+        .blocks_compute(blocks_compute),
+        .blocks_skip(blocks_skip),
+        .macs_compute(macs_compute),
+        .macs_skip(macs_skip)
     );
 
-    // Softmax placeholder wires (not fully wired to acc_mat)
-    // To complete: map acc_mat to softmax inputs per token.
+    // Softmax placeholder wires (map first DIM outputs as example)
+    logic [DIM*LUT_W-1:0] soft_in;
+    for (genvar si=0; si<DIM; si++) begin
+        assign soft_in[si*LUT_W +: LUT_W] = acc_mat[si*ACC_W +: LUT_W];
+    end
+    logic [DIM*LUT_W-1:0] soft_out;
+    logic soft_valid;
 
-    // TODO: instantiate buffers, tile_prescreen_array, softmax_masked, AXI-lite bridge.
+    softmax_masked #(
+        .DATA_W(LUT_W),
+        .LUT_ADDR(12),
+        .LUT_W(LUT_W),
+        .VEC_LEN(DIM)
+    ) u_soft (
+        .clk(clk),
+        .rst_n(rst_n),
+        .valid_in(tile_valid_out),
+        .in_vec(soft_in),
+        .mask({DIM{tile_mask_out}}),
+        .valid_out(soft_valid),
+        .out_vec(soft_out)
+    );
+
+    // Hook counters into AXI-lite
+    // (Reads are handled inside axi_lite_slave)
 
 endmodule
