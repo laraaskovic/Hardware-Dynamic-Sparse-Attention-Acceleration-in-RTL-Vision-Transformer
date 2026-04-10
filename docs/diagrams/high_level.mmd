@@ -1,0 +1,23 @@
+flowchart LR
+    subgraph Buffers
+        QBUF[Q Buffer]
+        KBUF[K Buffer]
+    end
+    PS[Pre-screener ∥Q∥1×∥K∥1 cmp]
+    MASK[Mask FIFO align]
+    ARRAY[Systolic PE Array valid gating]
+    SOFTMAX[Masked Softmax log-sum-exp + LUT exp]
+    AXI[AXI-Lite Control/Config]
+
+    QBUF --> PS
+    KBUF --> PS
+    PS --> MASK
+    MASK --> ARRAY
+    QBUF --> ARRAY
+    KBUF --> ARRAY
+    ARRAY --> SOFTMAX --> OUT[SRAM or Host]
+    AXI --> PS
+    AXI --> QBUF
+    AXI --> KBUF
+    AXI --> SOFTMAX
+    AXI --> OUT

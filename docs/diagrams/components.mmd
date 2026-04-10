@@ -1,0 +1,33 @@
+graph TD
+    subgraph Prescreener
+        ABS[Abs units]
+        ADD[Adder tree L1 norms]
+        MUL[MUL L1QxL1K]
+        CMP[Comparator vs threshold]
+        ABS --> ADD --> MUL --> CMP
+    end
+
+    subgraph PE_Array[PE Array DIMxDIM]
+        PE00((PE))
+        PE01((PE))
+        PE02((PE))
+        PE03((PE))
+    end
+
+    subgraph Softmax
+        SHIFT[Max subtract]
+        LUT[Exp LUT ROM]
+        SUM[Adder tree]
+        RECIP[Reciprocal]
+        NORM[Multiply & normalize]
+        SHIFT --> LUT --> SUM --> RECIP --> NORM
+    end
+
+    Buffers(Q/K SRAM) --> Prescreener
+    Prescreener --> PE_Array
+    Buffers --> PE_Array
+    PE_Array --> Softmax --> OutSRAM(Output SRAM)
+    AXI_CFG[AXI-Lite Config] --> Prescreener
+    AXI_CFG --> Buffers
+    AXI_CFG --> Softmax
+    AXI_CFG --> OutSRAM
