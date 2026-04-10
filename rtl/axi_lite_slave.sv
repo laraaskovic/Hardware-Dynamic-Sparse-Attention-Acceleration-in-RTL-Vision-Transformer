@@ -1,8 +1,13 @@
-// Minimal AXI4-Lite slave exposing control/status and threshold registers.
+// Minimal AXI4-Lite slave exposing control/status, threshold, and counters.
 // Address map (word offsets):
 // 0x00: control (bit0 start, bit1 soft_reset)
 // 0x04: status  (bit0 done, bit1 busy)
-// 0x08: threshold [PROD_W-1:0] (write)
+// 0x08: threshold low [31:0]
+// 0x0C: threshold high [PROD_W-1:32] (when PROD_W>32)
+// 0x10: blocks_compute (RO)
+// 0x14: blocks_skip    (RO)
+// 0x18: macs_compute   (RO)
+// 0x1C: macs_skip      (RO)
 
 module axi_lite_slave #(
     parameter int PROD_W = 52
@@ -35,7 +40,11 @@ module axi_lite_slave #(
     output logic         start_pulse,
     output logic [PROD_W-1:0] threshold,
     input  logic         done,
-    input  logic         busy
+    input  logic         busy,
+    input  logic [31:0]  blocks_compute,
+    input  logic [31:0]  blocks_skip,
+    input  logic [31:0]  macs_compute,
+    input  logic [31:0]  macs_skip
 );
 
     // Internal regs
@@ -58,9 +67,10 @@ module axi_lite_slave #(
         end else begin
             BVALID <= 1'b0;
             if (AWVALID && WVALID) begin
-                case (AWADDR[3:2])
-                    2'b00: start_reg <= WDATA[0];
-                    2'b10: threshold_reg <= WDATA; // low 32 bits; extend if needed below
+                case (AWADDR[5:2])
+                    4'h0: start_reg <= WDATA[0];
+                    4'h2: threshold_reg[31:0] <= WDATA; // low 32 bits
+                    4'h3: if (PROD_W > 32) threshold_reg[PROD_W-1:32] <= WDATA[PROD_W-1:32];
                     default: ;
                 endcase
                 BVALID <= 1'b1;
@@ -69,18 +79,14 @@ module axi_lite_slave #(
     end
 
     // If PROD_W > 32, keep upper bits separately
-    generate
-        if (PROD_W > 32) begin : UP32
-            always_ff @(posedge ACLK or negedge ARESETn) begin
-                if (!ARESETn) threshold_reg[PROD_W-1:32] <= '0;
-                else if (AWVALID && WVALID && AWADDR[3:2]==2'b11)
-                    threshold_reg[PROD_W-1:32] <= WDATA[PROD_W-1:32];
-            end
-        end
-    endgenerate
+    // Self-clear start_reg to form a pulse
+    always_ff @(posedge ACLK or negedge ARESETn) begin
+        if (!ARESETn) start_reg <= 1'b0;
+        else if (start_reg) start_reg <= 1'b0;
+    end
 
     assign threshold = threshold_reg;
-    assign start_pulse = start_reg; // one-cycle pulse assumed; upstream clears busy/done
+    assign start_pulse = start_reg; // one-cycle pulse
 
     // Read logic
     always_ff @(posedge ACLK or negedge ARESETn) begin
@@ -90,10 +96,14 @@ module axi_lite_slave #(
         end else begin
             RVALID <= 1'b0;
             if (ARVALID) begin
-                case (ARADDR[3:2])
-                    2'b00: RDATA <= {30'b0, busy, done};
-                    2'b10: RDATA <= threshold_reg[31:0];
-                    2'b11: RDATA <= (PROD_W > 32) ? threshold_reg[63:32] : 32'b0;
+                case (ARADDR[5:2])
+                    4'h0: RDATA <= {30'b0, busy, done};
+                    4'h2: RDATA <= threshold_reg[31:0];
+                    4'h3: RDATA <= (PROD_W > 32) ? threshold_reg[63:32] : 32'b0;
+                    4'h4: RDATA <= blocks_compute;
+                    4'h5: RDATA <= blocks_skip;
+                    4'h6: RDATA <= macs_compute;
+                    4'h7: RDATA <= macs_skip;
                     default: RDATA <= 32'b0;
                 endcase
                 RVALID <= 1'b1;
