@@ -22,7 +22,10 @@ module tile_prescreen_array #(
     input  logic [DIM*DIM*ACC_W-1:0]     acc_init,
     output logic [DIM*DIM*ACC_W-1:0]     acc_out,
     output logic                         valid_out,
-    output logic                         mask_out
+    output logic                         mask_out,
+    // Performance counters (blocks)
+    output logic [31:0]                  blocks_compute,
+    output logic [31:0]                  blocks_skip
 );
 
     // Prescreener
@@ -89,5 +92,16 @@ module tile_prescreen_array #(
         .acc_init(acc_init),
         .acc_out(acc_out)
     );
+
+    // Block-level counters (increment on valid_out)
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            blocks_compute <= 32'd0;
+            blocks_skip    <= 32'd0;
+        end else if (valid_out) begin
+            if (mask_out) blocks_compute <= blocks_compute + 1;
+            else          blocks_skip    <= blocks_skip + 1;
+        end
+    end
 
 endmodule
