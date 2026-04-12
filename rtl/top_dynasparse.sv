@@ -138,13 +138,14 @@ module top_dynasparse #(
         .rdata(k_buf)
     );
 
-    // Tile and softmax instances (wiring placeholders)
+    // Tile and softmax instances
     logic tile_valid_out, tile_mask_out;
     logic [DIM*DIM*ACC_W-1:0] acc_mat;
     logic [DIM*DATA_W-1:0] a_stub, b_stub;
     assign a_stub = '0;
     assign b_stub = '0;
     logic [31:0] blocks_compute, blocks_skip, macs_compute, macs_skip;
+    logic [31:0] macs_runtime, cycles_active;
     logic data_valid_aligned;
     tile_prescreen_array #(
         .WIDTH(WIDTH),
@@ -171,13 +172,15 @@ module top_dynasparse #(
         .blocks_compute(blocks_compute),
         .blocks_skip(blocks_skip),
         .macs_compute(macs_compute),
-        .macs_skip(macs_skip)
+        .macs_skip(macs_skip),
+        .macs_runtime(macs_runtime),
+        .cycles_active(cycles_active)
     );
 
-    // Softmax placeholder wires (map first DIM outputs as example)
+    // Softmax over first row outputs as example
     logic [DIM*LUT_W-1:0] soft_in;
     for (genvar si=0; si<DIM; si++) begin
-        assign soft_in[si*LUT_W +: LUT_W] = acc_mat[si*ACC_W +: LUT_W];
+        assign soft_in[si*LUT_W +: LUT_W] = acc_mat[(si*DIM)*ACC_W +: LUT_W];
     end
     logic [DIM*LUT_W-1:0] soft_out;
     logic soft_valid;
