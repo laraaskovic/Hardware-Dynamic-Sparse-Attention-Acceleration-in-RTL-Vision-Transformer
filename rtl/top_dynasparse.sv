@@ -59,6 +59,26 @@ module top_dynasparse #(
 
     assign done = (state == WRITEBACK);
 
+    // synopsys translate_off
+    property state_valid;
+        @(posedge clk) disable iff (!rst_n)
+            state inside {IDLE, LOAD_Q, LOAD_K, PRESCREEN, COMPUTE, SOFTM, WRITEBACK};
+    endproperty
+    assert property(state_valid) else $error("Illegal FSM state");
+
+    property writeback_after_softm;
+        @(posedge clk) disable iff (!rst_n)
+            state == WRITEBACK |-> $past(state == SOFTM);
+    endproperty
+    assert property(writeback_after_softm) else $error("WRITEBACK without SOFTM");
+
+    property soft_valid_before_writeback;
+        @(posedge clk) disable iff (!rst_n)
+            state == WRITEBACK |-> $past(soft_valid);
+    endproperty
+    assert property(soft_valid_before_writeback) else $error("WRITEBACK without soft_valid");
+    // synopsys translate_on
+
     // AXI-lite instance
     logic start_pulse;
     logic [PROD_W-1:0] threshold;
@@ -119,6 +139,7 @@ module top_dynasparse #(
     assign a_stub = '0;
     assign b_stub = '0;
     logic [31:0] blocks_compute, blocks_skip, macs_compute, macs_skip;
+    logic data_valid_aligned;
     tile_prescreen_array #(
         .WIDTH(WIDTH),
         .VEC_LEN(VEC_LEN),
@@ -140,6 +161,7 @@ module top_dynasparse #(
         .acc_out(acc_mat),
         .valid_out(tile_valid_out),
         .mask_out(tile_mask_out),
+        .data_valid_aligned(data_valid_aligned),
         .blocks_compute(blocks_compute),
         .blocks_skip(blocks_skip),
         .macs_compute(macs_compute),
