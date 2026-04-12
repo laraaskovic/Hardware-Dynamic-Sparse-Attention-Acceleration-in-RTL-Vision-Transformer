@@ -64,6 +64,8 @@ module top_dynasparse_bfm_tb;
     always #5 clk = ~clk;
     always #5 s_aclk = ~s_aclk;
 
+    logic [31:0] blocks_compute, blocks_skip, macs_compute, macs_skip;
+
     initial begin
         // VCD dump for visualization (compatible with Icarus/GTKWave)
         $dumpfile("top_dynasparse_bfm.vcd");
@@ -97,7 +99,6 @@ module top_dynasparse_bfm_tb;
         $display("Done asserted");
 
         // read counters
-        logic [31:0] blocks_compute, blocks_skip, macs_compute, macs_skip;
         blocks_compute = axi_read(8'h10);
         blocks_skip    = axi_read(8'h14);
         macs_compute   = axi_read(8'h18);
