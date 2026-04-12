@@ -23,11 +23,15 @@ module tile_prescreen_array #(
     output logic [DIM*DIM*ACC_W-1:0]     acc_out,
     output logic                         valid_out,
     output logic                         mask_out,
+    output logic                         data_valid_aligned,
     // Performance counters (blocks)
     output logic [31:0]                  blocks_compute,
     output logic [31:0]                  blocks_skip,
     output logic [31:0]                  macs_compute,
-    output logic [31:0]                  macs_skip
+    output logic [31:0]                  macs_skip,
+    // Per-cycle MAC accounting
+    output logic [31:0]                  macs_runtime,
+    output logic [31:0]                  cycles_active
 );
 
     // Prescreener
@@ -79,6 +83,7 @@ module tile_prescreen_array #(
     // Use prescreener outputs at latency boundary
     assign valid_out = ps_valid;
     assign mask_out  = ps_mask;
+    assign data_valid_aligned = valid_pipe[LAT];
 
     pe_array #(
         .DATA_W(DATA_W),
@@ -102,11 +107,18 @@ module tile_prescreen_array #(
             blocks_skip    <= 32'd0;
             macs_compute   <= 32'd0;
             macs_skip      <= 32'd0;
+            macs_runtime   <= 32'd0;
+            cycles_active  <= 32'd0;
         end else if (valid_out) begin
             if (mask_out) blocks_compute <= blocks_compute + 1;
             else          blocks_skip    <= blocks_skip + 1;
             if (mask_out) macs_compute <= macs_compute + DIM*DIM;
             else          macs_skip    <= macs_skip + DIM*DIM;
+        end
+        // per-cycle MAC runtime accounting
+        if (data_valid_aligned) begin
+            cycles_active <= cycles_active + 1;
+            if (ps_mask) macs_runtime <= macs_runtime + DIM*DIM;
         end
     end
 

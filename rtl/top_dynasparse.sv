@@ -105,7 +105,13 @@ module top_dynasparse #(
         .start_pulse(start_pulse),
         .threshold(threshold),
         .done(done),
-        .busy(state != IDLE)
+        .busy(state != IDLE),
+        .blocks_compute(blocks_compute),
+        .blocks_skip(blocks_skip),
+        .macs_compute(macs_compute),
+        .macs_skip(macs_skip),
+        .macs_runtime(macs_runtime),
+        .cycles_active(cycles_active)
     );
 
     // Q/K SRAM buffers (dual-port behavioral)
