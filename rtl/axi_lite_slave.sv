@@ -1,4 +1,5 @@
 // Minimal AXI4-Lite slave exposing control/status, threshold, and counters.
+// Intended for simulation bring-up; always-ready channels, single-beat only.
 // Address map (word offsets):
 // 0x00: control (bit0 start, bit1 soft_reset)
 // 0x04: status  (bit0 done, bit1 busy)
