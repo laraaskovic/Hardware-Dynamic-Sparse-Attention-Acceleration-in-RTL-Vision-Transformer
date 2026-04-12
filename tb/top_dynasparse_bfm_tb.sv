@@ -2,9 +2,9 @@
 
 // Bus Functional Model TB:
 // - writes threshold and start via AXI-lite
-// - writes one Q/K block into SRAM via direct WE
+// - writes one Q/K block into SRAM via direct WE (shortcut, not AXI-lite)
 // - waits for done
-// - reports counters
+// - reports counters (blocks, MACs, runtime)
 
 module top_dynasparse_bfm_tb;
     localparam int WIDTH   = 16;
