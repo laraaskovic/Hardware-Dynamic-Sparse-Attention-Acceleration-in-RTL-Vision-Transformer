@@ -99,10 +99,10 @@ module top_dynasparse_bfm_tb;
         $display("Done asserted");
 
         // read counters
-        blocks_compute = axi_read(8'h10);
-        blocks_skip    = axi_read(8'h14);
-        macs_compute   = axi_read(8'h18);
-        macs_skip      = axi_read(8'h1C);
+        axi_read(blocks_compute, 8'h10);
+        axi_read(blocks_skip,    8'h14);
+        axi_read(macs_compute,   8'h18);
+        axi_read(macs_skip,      8'h1C);
         $display("blocks_compute=%0d blocks_skip=%0d macs_compute=%0d macs_skip=%0d",
                  blocks_compute, blocks_skip, macs_compute, macs_skip);
         $finish;
@@ -122,16 +122,16 @@ module top_dynasparse_bfm_tb;
         end
     endtask
 
-    function automatic [31:0] axi_read(input [7:0] addr);
+    task axi_read(output [31:0] data_out, input [7:0] addr);
         begin
             araddr  <= addr[3:0];
             arvalid <= 1;
             @(posedge s_aclk);
             arvalid <= 0;
             wait(rvalid);
-            axi_read = rdata;
+            data_out = rdata;
             @(posedge s_aclk);
         end
-    endfunction
+    endtask
 
 endmodule

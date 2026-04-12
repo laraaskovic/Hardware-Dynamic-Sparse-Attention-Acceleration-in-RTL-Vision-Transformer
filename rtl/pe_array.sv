@@ -28,21 +28,15 @@ module pe_array #(
     endgenerate
 
     // Pipes for a (move right) and b (move down)
-    logic signed [DATA_W-1:0] a_pipe[DIM][DIM+1];
-    logic signed [DATA_W-1:0] b_pipe[DIM+1][DIM];
+    wire signed [DATA_W-1:0] a_pipe[DIM][DIM+1];
+    wire signed [DATA_W-1:0] b_pipe[DIM+1][DIM];
 
     // Initialize left/top edges each cycle
+    // Drive edge inputs combinationally (assume stable per cycle)
     generate
         for (i = 0; i < DIM; i++) begin : EDGE_IN
-            always_ff @(posedge clk or negedge rst_n) begin
-                if (!rst_n) begin
-                    a_pipe[i][0] <= '0;
-                    b_pipe[0][i] <= '0;
-                end else begin
-                    a_pipe[i][0] <= a_in[i];
-                    b_pipe[0][i] <= b_in[i];
-                end
-            end
+            assign a_pipe[i][0] = a_in[i];
+            assign b_pipe[0][i] = b_in[i];
         end
     endgenerate
 

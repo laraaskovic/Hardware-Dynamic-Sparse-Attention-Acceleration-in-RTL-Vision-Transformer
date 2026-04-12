@@ -63,15 +63,19 @@ module softmax_masked #(
     endgenerate
 
     // Exponential LUT (synchronous read)
-    exp_lut_rom #(
-        .ADDR_W(LUT_ADDR),
-        .DATA_W(LUT_W),
-        .MEMFILE("rtl/lut/exp_lut.mem")
-    ) exp_lut_i [VEC_LEN-1:0] (
-        .clk (clk),
-        .addr(lut_addr),
-        .dout(exp_val)
-    );
+    generate
+        for (i = 0; i < VEC_LEN; i++) begin : EXPROM
+            exp_lut_rom #(
+                .ADDR_W(LUT_ADDR),
+                .DATA_W(LUT_W),
+                .MEMFILE("rtl/lut/exp_lut.mem")
+            ) exp_lut_i (
+                .clk (clk),
+                .addr(lut_addr[i]),
+                .dout(exp_val[i])
+            );
+        end
+    endgenerate
 
     // Stage 4: sum exp (note: DEN_W sized to avoid overflow for VEC_LEN terms)
     logic [DEN_W-1:0] exp_sum;
