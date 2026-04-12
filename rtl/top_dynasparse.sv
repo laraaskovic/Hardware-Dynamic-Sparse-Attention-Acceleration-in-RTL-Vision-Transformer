@@ -177,7 +177,7 @@ module top_dynasparse #(
         .cycles_active(cycles_active)
     );
 
-    // Softmax over first row outputs as example
+    // Softmax over first row outputs (extend to full matrix in next rev)
     logic [DIM*LUT_W-1:0] soft_in;
     for (genvar si=0; si<DIM; si++) begin
         assign soft_in[si*LUT_W +: LUT_W] = acc_mat[(si*DIM)*ACC_W +: LUT_W];
