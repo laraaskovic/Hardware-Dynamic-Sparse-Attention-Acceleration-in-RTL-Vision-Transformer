@@ -15,6 +15,12 @@ $sources = @(
     "tb/top_dynasparse_bfm_tb.sv"
 )
 
+# Ensure scoop shims are on PATH (for iverilog installed via scoop)
+$shim = Join-Path $env:USERPROFILE "scoop\shims"
+if (-not ($env:Path -like "*$shim*")) {
+    $env:Path = "$env:Path;$shim"
+}
+
 $iver = (Get-Command iverilog -ErrorAction Stop).Source
 $vvp  = (Get-Command vvp -ErrorAction Stop).Source
 $cmd = @($iver, "-g2012", "-s", "top_dynasparse_bfm_tb", "-o", "simv") + $sources
