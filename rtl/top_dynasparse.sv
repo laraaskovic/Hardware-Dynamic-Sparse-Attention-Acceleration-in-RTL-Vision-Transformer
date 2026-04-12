@@ -9,7 +9,8 @@ module top_dynasparse #(
     parameter int DATA_W  = 16,
     parameter int ACC_W   = 52,
     parameter int DIM     = 4,
-    parameter int ADDR_W  = 8
+    parameter int ADDR_W  = 8,
+    parameter int LUT_W   = 16
 ) (
     input  logic clk,
     input  logic rst_n,
@@ -120,17 +121,14 @@ module top_dynasparse #(
     logic                     q_we, k_we;
     logic [ADDR_W-1:0]        q_waddr, k_waddr;
     logic [VEC_LEN*WIDTH-1:0] q_wdata, k_wdata;
-    logic [ADDR_W-1:0]        q_raddr, k_raddr;
     logic [VEC_LEN*WIDTH-1:0] q_buf, k_buf;
-    assign q_raddr = '0;
-    assign k_raddr = '0;
 
     simple_dualport_sram #(.ADDR_W(ADDR_W), .DATA_W(VEC_LEN*WIDTH)) q_sram (
         .clk(clk),
         .we(q_we),
         .waddr(q_waddr),
         .wdata(q_wdata),
-        .raddr(q_raddr),
+        .raddr('0),
         .rdata(q_buf)
     );
     simple_dualport_sram #(.ADDR_W(ADDR_W), .DATA_W(VEC_LEN*WIDTH)) k_sram (
@@ -138,7 +136,7 @@ module top_dynasparse #(
         .we(k_we),
         .waddr(k_waddr),
         .wdata(k_wdata),
-        .raddr(k_raddr),
+        .raddr('0),
         .rdata(k_buf)
     );
 
