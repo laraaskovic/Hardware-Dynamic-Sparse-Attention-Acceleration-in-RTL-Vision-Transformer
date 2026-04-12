@@ -65,6 +65,10 @@ module top_dynasparse_bfm_tb;
     always #5 s_aclk = ~s_aclk;
 
     initial begin
+        // VCD dump for visualization (compatible with Icarus/GTKWave)
+        $dumpfile("top_dynasparse_bfm.vcd");
+        $dumpvars(0, top_dynasparse_bfm_tb);
+
         rst_n = 0; s_aresetn = 0;
         awaddr=0; awvalid=0; wdata=0; wstrb=4'hF; wvalid=0; bready=1;
         araddr=0; arvalid=0; rready=1;
