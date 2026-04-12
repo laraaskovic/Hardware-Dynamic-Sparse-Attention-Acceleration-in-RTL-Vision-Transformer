@@ -16,7 +16,7 @@ $sources = @(
 )
 
 $cmd = @("iverilog", "-g2012", "-s", "top_dynasparse_bfm_tb", "-o", "simv") + $sources
-& $cmd
+& $cmd[0] $cmd[1..($cmd.Length-1)]
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 & vvp simv
