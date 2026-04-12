@@ -15,9 +15,11 @@ $sources = @(
     "tb/top_dynasparse_bfm_tb.sv"
 )
 
-$cmd = @("iverilog", "-g2012", "-s", "top_dynasparse_bfm_tb", "-o", "simv") + $sources
+$iver = (Get-Command iverilog -ErrorAction Stop).Source
+$vvp  = (Get-Command vvp -ErrorAction Stop).Source
+$cmd = @($iver, "-g2012", "-s", "top_dynasparse_bfm_tb", "-o", "simv") + $sources
 & $cmd[0] $cmd[1..($cmd.Length-1)]
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& vvp simv
+& $vvp simv
 Write-Host "VCD generated: top_dynasparse_bfm.vcd (open with GTKWave)"
