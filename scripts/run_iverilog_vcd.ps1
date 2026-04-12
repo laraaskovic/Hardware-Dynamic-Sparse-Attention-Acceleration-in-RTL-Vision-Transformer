@@ -23,7 +23,7 @@ if (-not ($env:Path -like "*$shim*")) {
 
 $iver = (Get-Command iverilog -ErrorAction Stop).Source
 $vvp  = (Get-Command vvp -ErrorAction Stop).Source
-$cmd = @($iver, "-g2012", "-s", "top_dynasparse_bfm_tb", "-o", "simv") + $sources
+$cmd = @($iver, "-g2012", "-DIVERILOG", "-s", "top_dynasparse_bfm_tb", "-o", "simv") + $sources
 & $cmd[0] $cmd[1..($cmd.Length-1)]
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
