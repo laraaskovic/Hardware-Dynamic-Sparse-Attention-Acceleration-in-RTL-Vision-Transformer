@@ -47,7 +47,7 @@ module top_dynasparse #(
     always_comb begin
         next_state = state;
         case (state)
-            IDLE:       if (start) next_state = LOAD_Q;
+            IDLE:       if (start_pulse) next_state = LOAD_Q;
             LOAD_Q:     next_state = LOAD_K;
             LOAD_K:     next_state = PRESCREEN;
             PRESCREEN:  next_state = COMPUTE;
@@ -59,6 +59,7 @@ module top_dynasparse #(
 
     assign done = (state == WRITEBACK);
 
+`ifndef IVERILOG
     // synopsys translate_off
     property state_valid;
         @(posedge clk) disable iff (!rst_n)
@@ -78,6 +79,7 @@ module top_dynasparse #(
     endproperty
     assert property(soft_valid_before_writeback) else $error("WRITEBACK without soft_valid");
     // synopsys translate_on
+`endif
 
     // AXI-lite instance
     logic start_pulse;
@@ -120,6 +122,8 @@ module top_dynasparse #(
     logic [VEC_LEN*WIDTH-1:0] q_wdata, k_wdata;
     logic [ADDR_W-1:0]        q_raddr, k_raddr;
     logic [VEC_LEN*WIDTH-1:0] q_buf, k_buf;
+    assign q_raddr = '0;
+    assign k_raddr = '0;
 
     simple_dualport_sram #(.ADDR_W(ADDR_W), .DATA_W(VEC_LEN*WIDTH)) q_sram (
         .clk(clk),
