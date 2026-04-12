@@ -2,6 +2,9 @@
 // Integrates magnitude_prescreener with pe_array.
 // Assumes prescreener latency of 2 cycles; inserts shift registers on data to align with mask.
 
+// tile_prescreen_array
+// Integrates magnitude prescreener + data alignment + PE array.
+// Provides block/MAC counters for measurement.
 module tile_prescreen_array #(
     parameter int WIDTH    = 16,
     parameter int VEC_LEN  = 64,
