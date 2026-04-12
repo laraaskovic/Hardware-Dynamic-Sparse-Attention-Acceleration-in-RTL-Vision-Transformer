@@ -128,7 +128,7 @@ module top_dynasparse #(
         .we(q_we),
         .waddr(q_waddr),
         .wdata(q_wdata),
-        .raddr('0),
+        .raddr({ADDR_W{1'b0}}),
         .rdata(q_buf)
     );
     simple_dualport_sram #(.ADDR_W(ADDR_W), .DATA_W(VEC_LEN*WIDTH)) k_sram (
@@ -136,7 +136,7 @@ module top_dynasparse #(
         .we(k_we),
         .waddr(k_waddr),
         .wdata(k_wdata),
-        .raddr('0),
+        .raddr({ADDR_W{1'b0}}),
         .rdata(k_buf)
     );
 
@@ -166,7 +166,7 @@ module top_dynasparse #(
         .threshold(threshold),
         .a_in_vec(a_stub),
         .b_in_vec(b_stub),
-        .acc_init('0),
+        .acc_init({DIM*DIM*ACC_W{1'b0}}),
         .acc_out(acc_mat),
         .valid_out(tile_valid_out),
         .mask_out(tile_mask_out),

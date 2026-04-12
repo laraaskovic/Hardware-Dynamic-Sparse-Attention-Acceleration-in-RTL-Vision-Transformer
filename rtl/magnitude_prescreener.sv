@@ -40,7 +40,8 @@ module magnitude_prescreener #(
     // Stage 1: compute L1 sums
     logic [SUM_W-1:0] sum_q_s1, sum_k_s1;
     integer j;
-    always_comb begin
+    // Note: iverilog limitation on constant selects in always_comb; using always @* equivalent
+    always @* begin
         sum_q_s1 = '0;
         sum_k_s1 = '0;
         for (j = 0; j < VEC_LEN; j++) begin
