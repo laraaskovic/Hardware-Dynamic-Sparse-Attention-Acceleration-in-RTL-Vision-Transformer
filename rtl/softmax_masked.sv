@@ -73,7 +73,7 @@ module softmax_masked #(
         .dout(exp_val)
     );
 
-    // Stage 4: sum exp
+    // Stage 4: sum exp (note: DEN_W sized to avoid overflow for VEC_LEN terms)
     logic [DEN_W-1:0] exp_sum;
     always_comb begin
         exp_sum = '0;
