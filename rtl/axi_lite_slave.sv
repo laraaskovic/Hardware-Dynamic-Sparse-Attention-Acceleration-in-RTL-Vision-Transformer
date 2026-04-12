@@ -8,6 +8,8 @@
 // 0x14: blocks_skip    (RO)
 // 0x18: macs_compute   (RO)
 // 0x1C: macs_skip      (RO)
+// 0x20: macs_runtime   (RO)
+// 0x24: cycles_active  (RO)
 
 module axi_lite_slave #(
     parameter int PROD_W = 52
@@ -44,7 +46,9 @@ module axi_lite_slave #(
     input  logic [31:0]  blocks_compute,
     input  logic [31:0]  blocks_skip,
     input  logic [31:0]  macs_compute,
-    input  logic [31:0]  macs_skip
+    input  logic [31:0]  macs_skip,
+    input  logic [31:0]  macs_runtime,
+    input  logic [31:0]  cycles_active
 );
 
     // Internal regs
@@ -104,6 +108,8 @@ module axi_lite_slave #(
                     4'h5: RDATA <= blocks_skip;
                     4'h6: RDATA <= macs_compute;
                     4'h7: RDATA <= macs_skip;
+                    4'h8: RDATA <= macs_runtime;
+                    4'h9: RDATA <= cycles_active;
                     default: RDATA <= 32'b0;
                 endcase
                 RVALID <= 1'b1;

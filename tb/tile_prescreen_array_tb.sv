@@ -38,7 +38,8 @@ module tile_prescreen_array_tb;
         .acc_init(acc_init),
         .acc_out(acc_out),
         .valid_out(valid_out),
-        .mask_out(mask_out)
+        .mask_out(mask_out),
+        .data_valid_aligned() // unused in this TB
     );
 
     // Clock
